@@ -311,7 +311,7 @@ bool ATCommands::registerCommands(const at_command_t *commands, uint32_t size) {
   numberOfCommands = (uint16_t)(size / sizeof(at_command_t));
 
   if (numberOfCommands != 0xFFFF) {
-    sucess = true;
+    success = true;
   }
   return success;
 }
