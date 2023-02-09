@@ -28,10 +28,6 @@ void ATCommands::begin(Stream *stream, const at_command_t *commands,
   clearBuffer();
 }
 
-void ATCommands::ATCommands_set_command(String &command) {
-  bufferString = command;
-}
-
 /**
  * @brief parseCommand
  * Checks the incoming buffer to ensure it begins with AT and then seeks to
@@ -52,12 +48,10 @@ bool ATCommands::parseCommand() {
   if (this->bufferPos == 0) {
     // fall through
     setDefaultHandler(NULL);
-    Serial.println("NULL BUFF");
     return true;
   }
 
   if (!this->bufferString.startsWith("AT")) {
-    Serial.println("Starts with AT");
     return false;
   }
 
@@ -229,7 +223,6 @@ AT_COMMANDS_ERRORS ATCommands::update() {
 
     if (bufferPos < this->bufferSize) {
       writeToBuffer(ch);
-
     } else {
 #ifdef AT_COMMANDS_DEBUG
       Serial.println(F("--BUFFER OVERFLOW--"));
@@ -255,7 +248,7 @@ AT_COMMANDS_ERRORS ATCommands::update() {
       if (!parseCommand()) {
         this->error();
         clearBuffer();
-        return AT_COMMANDS_SUCCESS;
+        return AT_COMMANDS_ERROR_SYNTAX;
       }
 
       // process the command
@@ -265,16 +258,16 @@ AT_COMMANDS_ERRORS ATCommands::update() {
       clearBuffer();
     }
   }
-
   return AT_COMMANDS_SUCCESS;
 }
-
-AT_COMMANDS_ERRORS ATCommands::manual_update(const char *manual_command) {
-  uint16_t char_index = 0;
-  while (manual_command[char_index] != '\0') {
-    int ch = manual_command[char_index];
-    // Serial.println(char(ch));
-    char_index += 1;
+AT_COMMANDS_ERRORS ATCommands::manual_update(const char *command) {
+  if (serial == NULL) {
+    return AT_COMMANDS_ERROR_NO_SERIAL;
+  }
+  uint16_t cmd_idx = 0;
+  while (command[cmd_idx] != '0') {
+    int ch = command[cmd_idx];
+    cmd_idx += 1;
 #ifdef AT_COMMANDS_DEBUG
     Serial.print(F("Read: bufferSize="));
     Serial.print(this->bufferSize);
@@ -298,7 +291,6 @@ AT_COMMANDS_ERRORS ATCommands::manual_update(const char *manual_command) {
 
     if (bufferPos < this->bufferSize) {
       writeToBuffer(ch);
-      // Serial.println("writing to buffer");
     } else {
 #ifdef AT_COMMANDS_DEBUG
       Serial.println(F("--BUFFER OVERFLOW--"));
@@ -324,8 +316,7 @@ AT_COMMANDS_ERRORS ATCommands::manual_update(const char *manual_command) {
       if (!parseCommand()) {
         this->error();
         clearBuffer();
-        Serial.println("parsing");
-        return AT_COMMANDS_SUCCESS;
+        return AT_COMMANDS_ERROR_SYNTAX;
       }
 
       // process the command
@@ -335,7 +326,6 @@ AT_COMMANDS_ERRORS ATCommands::manual_update(const char *manual_command) {
       clearBuffer();
     }
   }
-
   return AT_COMMANDS_SUCCESS;
 }
 
