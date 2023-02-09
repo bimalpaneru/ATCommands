@@ -107,7 +107,7 @@ class ATCommands {
 
   // initialize
   ATCommands();
-
+  void ATCommands_set_command(String &command);
   // register serial port, commands and buffers
   void begin(Stream *serial, const at_command_t *commands, uint32_t size,
              const uint16_t bufferSize, const char *terminator = "\r\n");
@@ -122,6 +122,7 @@ class ATCommands {
    * SERIAL_COMMANDS_ERROR_XXXX on error.
    */
   AT_COMMANDS_ERRORS update();
+  AT_COMMANDS_ERRORS manual_update(const char *manual_command);
 
   /**
    * @brief Clears the buffer, and resets the indexes.

@@ -28,6 +28,10 @@ void ATCommands::begin(Stream *stream, const at_command_t *commands,
   clearBuffer();
 }
 
+void ATCommands::ATCommands_set_command(String &command) {
+  bufferString = command;
+}
+
 /**
  * @brief parseCommand
  * Checks the incoming buffer to ensure it begins with AT and then seeks to
@@ -48,10 +52,12 @@ bool ATCommands::parseCommand() {
   if (this->bufferPos == 0) {
     // fall through
     setDefaultHandler(NULL);
+    Serial.println("NULL BUFF");
     return true;
   }
 
   if (!this->bufferString.startsWith("AT")) {
+    Serial.println("Starts with AT");
     return false;
   }
 
@@ -223,6 +229,7 @@ AT_COMMANDS_ERRORS ATCommands::update() {
 
     if (bufferPos < this->bufferSize) {
       writeToBuffer(ch);
+
     } else {
 #ifdef AT_COMMANDS_DEBUG
       Serial.println(F("--BUFFER OVERFLOW--"));
@@ -258,6 +265,77 @@ AT_COMMANDS_ERRORS ATCommands::update() {
       clearBuffer();
     }
   }
+
+  return AT_COMMANDS_SUCCESS;
+}
+
+AT_COMMANDS_ERRORS ATCommands::manual_update(const char *manual_command) {
+  uint16_t char_index = 0;
+  while (manual_command[char_index] != '\0') {
+    int ch = manual_command[char_index];
+    // Serial.println(char(ch));
+    char_index += 1;
+#ifdef AT_COMMANDS_DEBUG
+    Serial.print(F("Read: bufferSize="));
+    Serial.print(this->bufferSize);
+    Serial.print(F(" bufferPos="));
+    Serial.print(bufferPos);
+    Serial.print(F(" termPos="));
+    Serial.print(termPos);
+    if (ch < 32) {
+      Serial.print(F(" ch=#"));
+      Serial.print(ch);
+    } else {
+      Serial.print(" ch=[");
+      Serial.print((char)ch);
+      Serial.print(F("]"));
+    }
+    Serial.println();
+#endif
+    if (ch <= 0) {
+      continue;
+    }
+
+    if (bufferPos < this->bufferSize) {
+      writeToBuffer(ch);
+      // Serial.println("writing to buffer");
+    } else {
+#ifdef AT_COMMANDS_DEBUG
+      Serial.println(F("--BUFFER OVERFLOW--"));
+#endif
+      clearBuffer();
+      return AT_COMMANDS_ERROR_BUFFER_FULL;
+    }
+
+    if (term[termPos] != ch) {
+      termPos = 0;
+      continue;
+    }
+
+    if (term[++termPos] == 0) {
+#ifdef AT_COMMANDS_DEBUG
+      Serial.print(F("Received: ["));
+      for (uint32_t n = 0; n < this->bufferSize; n++) {
+        Serial.print(this->bufferString[n]);
+      }
+      Serial.println(F("]"));
+#endif
+
+      if (!parseCommand()) {
+        this->error();
+        clearBuffer();
+        Serial.println("parsing");
+        return AT_COMMANDS_SUCCESS;
+      }
+
+      // process the command
+      processCommand();
+
+      // finally clear the buffer
+      clearBuffer();
+    }
+  }
+
   return AT_COMMANDS_SUCCESS;
 }
 
