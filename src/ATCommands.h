@@ -72,6 +72,7 @@ class ATCommands {
   // placeholder for number of commands in the array
   uint16_t numberOfCommands;
   const at_command_t *atCommands;
+  bool manual_command;
 
   // input buffers
   String bufferString = "";
@@ -107,6 +108,9 @@ class ATCommands {
 
   // initialize
   ATCommands();
+
+  bool command_is_manual();
+  void command_set_to_manual(bool command_origin);
 
   // register serial port, commands and buffers
   void begin(Stream *serial, const at_command_t *commands, uint32_t size,

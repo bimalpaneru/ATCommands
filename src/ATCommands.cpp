@@ -28,6 +28,12 @@ void ATCommands::begin(Stream *stream, const at_command_t *commands,
   clearBuffer();
 }
 
+bool ATCommands::command_is_manual() { return manual_command; }
+
+void ATCommands::command_set_to_manual(bool command_origin) {
+  manual_command = command_origin;
+}
+
 /**
  * @brief parseCommand
  * Checks the incoming buffer to ensure it begins with AT and then seeks to
@@ -265,7 +271,9 @@ AT_COMMANDS_ERRORS ATCommands::manual_update(const char *command) {
     return AT_COMMANDS_ERROR_NO_SERIAL;
   }
   uint16_t cmd_idx = 0;
-  while (command[cmd_idx] != '0') {
+  // Set the flag true for manual command/remote command.
+  command_set_to_manual(true);
+  while (command[cmd_idx] != '\0') {
     int ch = command[cmd_idx];
     cmd_idx += 1;
 #ifdef AT_COMMANDS_DEBUG
@@ -326,6 +334,8 @@ AT_COMMANDS_ERRORS ATCommands::manual_update(const char *command) {
       clearBuffer();
     }
   }
+  // Set the flag false for manual command/remote command completion.
+  command_set_to_manual(false);
   return AT_COMMANDS_SUCCESS;
 }
 
